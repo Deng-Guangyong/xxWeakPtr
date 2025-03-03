@@ -31,7 +31,7 @@ target_include_directories(xxWeakPtr PUBLIC
 )
 
 # 符号导出配置
-target_compile_definitions(xxWeakPtr PUBLIC XXWEAKPTR_EXPORTS)
+target_compile_definitions(xxWeakPtr PRIVATE XXWEAKPTR_EXPORTS)
 # IntelliSense配置：
 target_compile_definitions(xxWeakPtr PRIVATE 
   _SILENCE_ALL_CXX17_DEPRECATION_WARNINGS
