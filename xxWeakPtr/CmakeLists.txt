@@ -1,0 +1,144 @@
+# 源文件列表
+set(SOURCES
+    xxRefObject.cpp
+)
+
+# 头文件列表
+set(HEADERS
+    xxRefObject.h
+    xxWeakPtr.h
+    xxWeakPtrExport.h
+)
+
+# 创建源文件组
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${SOURCES} ${HEADERS})
+
+# 创建库目标
+add_library(xxWeakPtr SHARED ${SOURCES} ${HEADERS})
+
+# 生成导出头文件
+include(GenerateExportHeader)
+generate_export_header(xxWeakPtr
+    BASE_NAME XXWEAKPTR
+    EXPORT_FILE_NAME xxWeakPtrExport.h
+)
+
+# 包含目录配置
+target_include_directories(xxWeakPtr PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+    $<INSTALL_INTERFACE:include>
+)
+
+# 符号导出配置
+target_compile_definitions(xxWeakPtr PUBLIC XXWEAKPTR_EXPORTS)
+# IntelliSense配置：
+target_compile_definitions(xxWeakPtr PRIVATE 
+  _SILENCE_ALL_CXX17_DEPRECATION_WARNINGS
+)
+
+# 版本属性和输出目录设置
+set_target_properties(xxWeakPtr PROPERTIES
+    VERSION ${PROJECT_VERSION}
+    SOVERSION 0 # ABI 版本号，保持向后兼容性
+    WINDOWS_EXPORT_ALL_SYMBOLS OFF
+    DEBUG_POSTFIX "d"  # Debug版本添加'd'后缀
+    ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/lib"  # .lib文件输出到lib目录
+    LIBRARY_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/lib"  # .lib文件输出到lib目录
+    RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin"  # .dll文件输出到bin目录
+    # RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"  # .dll文件输出到bin目录
+)
+
+# 生成版本配置文件
+include(CMakePackageConfigHelpers)
+write_basic_package_version_file(
+    "${CMAKE_CURRENT_BINARY_DIR}/xxWeakPtrConfigVersion.cmake"
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY SameMajorVersion
+)
+
+# 配置安装路径
+include(GNUInstallDirs)
+set(INSTALL_CONFIGDIR "${CMAKE_INSTALL_LIBDIR}/cmake/xxWeakPtr")
+
+# 导出目标
+install(TARGETS xxWeakPtr
+    EXPORT xxWeakPtrTargets
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+
+# 安装头文件
+install(FILES
+    xxRefObject.h
+    xxWeakPtr.h
+    ${CMAKE_CURRENT_BINARY_DIR}/xxWeakPtrExport.h
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/xxWeakPtr
+)
+
+# 安装导出目标
+install(EXPORT xxWeakPtrTargets
+    FILE xxWeakPtrTargets.cmake
+    NAMESPACE xxWeakPtr::
+    DESTINATION ${INSTALL_CONFIGDIR}
+)
+
+# 配置并安装配置文件
+configure_package_config_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/xxWeakPtrConfig.cmake.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/xxWeakPtrConfig.cmake"
+    INSTALL_DESTINATION ${INSTALL_CONFIGDIR}
+)
+
+# 安装配置文件和版本文件
+install(FILES
+    "${CMAKE_CURRENT_BINARY_DIR}/xxWeakPtrConfig.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/xxWeakPtrConfigVersion.cmake"
+    DESTINATION ${INSTALL_CONFIGDIR}
+)
+
+# 导出包从构建树
+export(EXPORT xxWeakPtrTargets
+    FILE "${CMAKE_CURRENT_BINARY_DIR}/xxWeakPtrTargets.cmake"
+    NAMESPACE xxWeakPtr::
+)
+
+# 注册包到构建树
+export(PACKAGE xxWeakPtr)
+
+# 调试符号配置：
+if(MSVC)
+  set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<IF:$<AND:$<C_COMPILER_ID:MSVC>,$<CXX_COMPILER_ID:MSVC>>,$<$<CONFIG:Debug,RelWithDebInfo>:ProgramDatabase>>")
+endif()
+
+# 调试符号分离：
+if(MSVC)
+    # 为所有配置启用PDB生成
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+        set_target_properties(xxWeakPtr PROPERTIES 
+            PDB_NAME "xxWeakPtr"
+            PDB_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/pdb"
+            COMPILE_PDB_NAME "xxWeakPtr"
+            COMPILE_PDB_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin"
+        )
+    else()
+        set_target_properties(xxWeakPtr PROPERTIES 
+            PDB_NAME "xxWeakPtr"
+            PDB_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/pdb"
+            COMPILE_PDB_NAME "xxWeakPtr"
+            COMPILE_PDB_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/pdb"
+        )
+    endif()
+
+    # 添加编译选项以在Release模式下生成PDB
+    target_compile_options(xxWeakPtr PRIVATE 
+        $<$<CONFIG:Release>:/Zi>
+    )
+    
+    # 添加链接选项以在Release模式下生成PDB
+    target_link_options(xxWeakPtr PRIVATE
+        $<$<CONFIG:Release>:/DEBUG /OPT:REF /OPT:ICF>
+    )
+endif()

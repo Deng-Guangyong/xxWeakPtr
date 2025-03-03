@@ -1,0 +1,38 @@
+enable_testing()
+
+# find_package(GTest REQUIRED)
+
+# 获取所有测试源文件
+file(GLOB TEST_SOURCES "test_*.cpp")
+
+# 创建单个测试可执行文件
+add_executable(tests 
+    main_test.cpp  # 主测试入口文件
+    ${TEST_SOURCES}
+)
+
+# 设置包含目录
+target_include_directories(tests PRIVATE 
+    ${PROJECT_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}
+)
+
+# 链接库
+target_link_libraries(tests PRIVATE
+    xxWeakPtr
+    GTest::GTest 
+    GTest::Main
+)
+
+# Windows DLL处理
+if(WIN32 AND BUILD_SHARED_LIBS)
+    add_custom_command(TARGET tests POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy
+        $<TARGET_FILE:xxWeakPtr> 
+        $<TARGET_FILE_DIR:tests>
+    )
+endif()
+
+
+# 添加测试
+add_test(NAME tests COMMAND tests)

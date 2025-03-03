@@ -1,0 +1,61 @@
+cmake_minimum_required(VERSION 3.15)
+project(xxWeakPtrProject LANGUAGES CXX VERSION 0.0.1)
+
+# 全局配置
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_DEBUG_POSTFIX "_d")
+
+set(THIRD_PARTY_DIR $ENV{THIRD_PARTY})
+
+# option(BUILD_TESTING "Build tests" ON)
+# option(BUILD_EXAMPLES "Build examples" ON)
+
+# 设置输出目录
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)  # exe 文件
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)  # 动态库
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)  # 静态库
+
+if(MSVC)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -WX -W2 -MP")
+    # 添加uft8支持
+    add_compile_options("$<$<C_COMPILER_ID:MSVC>:/utf-8>")
+    add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
+else()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -W4")
+endif()
+
+# 添加子目录
+add_subdirectory(xxWeakPtr)
+
+if(BUILD_EXAMPLES)
+    add_subdirectory(examples)
+endif()
+
+if(BUILD_TESTING)
+    set(GTest_ROOT ${THIRD_PARTY_DIR}/googletest-1.11.0)
+    find_package(GTest REQUIRED)
+
+    enable_testing()
+    add_subdirectory(tests) 
+
+    # 拷贝GTest相关dll
+    # 确保 Debug 和 Release 目录存在
+    if(MSVC)
+        # Visual Studio 环境下
+        file(MAKE_DIRECTORY ${PROJECT_SOURCE_DIR}/bin/Debug)
+        file(MAKE_DIRECTORY ${PROJECT_SOURCE_DIR}/bin/Release)
+        file(MAKE_DIRECTORY ${PROJECT_SOURCE_DIR}/bin/RelWithDebInfo)
+
+        set(GTEST_DLL_PATH $<TARGET_FILE:GTest::gtest>)
+        set(GTEST_MAIN_DLL_PATH $<TARGET_FILE:GTest::gtest_main>)
+        
+        add_custom_target(copy_gtest_dlls ALL
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                ${GTEST_DLL_PATH}
+                ${GTEST_MAIN_DLL_PATH}
+                ${PROJECT_SOURCE_DIR}/bin/$<CONFIG>
+        )
+    endif()
+
+endif()
